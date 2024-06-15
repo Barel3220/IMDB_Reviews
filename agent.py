@@ -7,7 +7,8 @@ from replay_buffer import ReplayBuffer, device
 
 def soft_update(local_model, target_model, tau):
     """
-    Soft update model parameters.
+    Used to slowly update the target network parameters to be closer to the local network parameters using the
+    parameter tau
 
     Args:
         local_model (nn.Module): Local Q-Network.
