@@ -45,6 +45,15 @@ To set up the project, follow these steps:
     pip install -r requirements.txt
     ```
 
+requirements.txt to install:
+```
+pandas==1.3.5
+scikit-learn==1.0.2
+torch==1.11.0
+torchtext==0.12.0
+tqdm==4.62.3
+```
+
 ## Usage
 
 ### Training the Model
