@@ -8,7 +8,7 @@ device = torch.device(
     "cuda:0" if torch.cuda.is_available() else "mps:0" if torch.backends.mps.is_available() else "cpu")
 
 
-def train(agent_, train_loader_, num_epochs=20):
+def train(agent_, train_loader_, num_epochs=2):
     """
     Train the agent using the training data.
 

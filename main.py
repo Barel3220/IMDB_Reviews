@@ -10,7 +10,6 @@ from agent import Agent
 from predict import predict_sentiments
 from train import train
 from evaluate import evaluate
-from replay_buffer import device
 
 # Load the IMDb dataset
 file_path = 'IMDB-Dataset-Edited.csv'
@@ -19,6 +18,11 @@ df = pd.read_csv(file_path)
 # Encode the sentiments (positive/negative) as integers
 le = LabelEncoder()
 df['sentiment'] = le.fit_transform(df['sentiment'])
+
+# Calculate the imbalance ratio
+counts = df['sentiment'].value_counts()
+imbalance_ratio = counts.max() / counts.min()
+print(f"Imbalance Ratio: {imbalance_ratio}")
 
 # Split the data into training and testing sets
 train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)

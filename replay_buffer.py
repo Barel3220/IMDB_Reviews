@@ -39,7 +39,8 @@ class ReplayBuffer:
         """
         experiences = random.sample(self.memory, k=self.batch_size)  # Sample experiences
         texts = [e.text for e in experiences if e is not None]  # Extract texts
-        labels = torch.tensor([e.label for e in experiences if e is not None], dtype=torch.long).to(device)  # Extract labels and move to device
+        labels = torch.tensor([e.label for e in experiences if e is not None], dtype=torch.long).to(
+            device)  # Extract labels and move to device
         max_len = max([len(text) for text in texts])  # Find the maximum length of texts
         texts_padded = pad_sequence(
             [torch.cat([text, torch.tensor([1] * (max_len - len(text))).to(device)]).unsqueeze(0) for text in texts],
@@ -53,5 +54,7 @@ class ReplayBuffer:
         """
         return len(self.memory)
 
+
 # Set the device for tensors
-device = torch.device("cuda:0" if torch.cuda.is_available() else "mps:0" if torch.backends.mps.is_available() else "cpu")
+device = torch.device(
+    "cuda:0" if torch.cuda.is_available() else "mps:0" if torch.backends.mps.is_available() else "cpu")
