@@ -12,8 +12,8 @@ from train import train
 from evaluate import evaluate
 
 # Set file paths
-file_path = 'IMDB-Dataset-Edited.csv'
-small_path = 'last_10_reviews.csv'
+file_path = '../IMDB-Dataset-Edited.csv'
+small_path = '../last_10_reviews.csv'
 
 # Load the datasets
 df = pd.read_csv(file_path)
