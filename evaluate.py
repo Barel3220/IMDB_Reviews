@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 from tqdm import tqdm
-from agent import Agent
+from agent import DoubleDQNAgent
 from torch.utils.data import DataLoader
 from sklearn.metrics import f1_score, confusion_matrix
 
@@ -10,19 +10,21 @@ device = torch.device(
     "cuda:0" if torch.cuda.is_available() else "mps:0" if torch.backends.mps.is_available() else "cpu")
 
 
-def g_mean(y_true, y_pred):
+def g_mean(all_labels, all_preds):
     """
     Calculate the G-mean metric.
 
     Args:
-        y_true (list or np.ndarray): True labels.
-        y_pred (list or np.ndarray): Predicted labels.
+        all_labels (list or np.ndarray): True labels.
+        all_preds (list or np.ndarray): Predicted labels.
 
     Returns:
         float: G-mean score.
     """
-    cm = confusion_matrix(y_true, y_pred)
-    return np.sqrt((cm[0, 0] / (cm[0, 0] + cm[0, 1])) * (cm[1, 1] / (cm[1, 1] + cm[1, 0])))
+    tn, fp, fn, tp = confusion_matrix(all_labels, all_preds).ravel()
+    sensitivity = tp / (tp + fn)
+    specificity = tn / (tn + fp)
+    return np.sqrt(sensitivity * specificity)
 
 
 def evaluate(agent_, test_loader_):
@@ -30,7 +32,7 @@ def evaluate(agent_, test_loader_):
     Evaluate the agent using the test data.
 
     Args:
-        agent_ (Agent): The agent to be evaluated.
+        agent_ (DoubleDQNAgent): The agent to be evaluated.
         test_loader_ (DataLoader): DataLoader for the test data.
     """
     agent_.qnetwork_local.eval()  # Set network to evaluation mode

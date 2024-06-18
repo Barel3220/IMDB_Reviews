@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 import torch.optim as optim
 from text_model import TextModel
-from single_dqn_reply_buffer import ReplayBuffer, device
+from single_dqn_replay_buffer import ReplayBuffer, device
 
 
 class SingleDQNAgent:
