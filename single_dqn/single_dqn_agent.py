@@ -1,35 +1,32 @@
 import torch
 import torch.nn.functional as F
 import torch.optim as optim
-from qnetwork import QNetwork
-from replay_buffer import ReplayBuffer, device
+from text_model import TextModel
+from single_dqn_reply_buffer import ReplayBuffer, device
 
 
 class SingleDQNAgent:
-    def __init__(self, vocab_size, embed_dim, num_classes, buffer_size=int(1e5), batch_size=64, gamma=0.99, lr=5e-4,
-                 update_every=4):
+    def __init__(self, vocab_size, max_words, num_classes, buffer_size=int(1e4), batch_size=64, lr=1e-4, update_every=4):
         """
         Initialize the SingleDQNAgent.
 
         Args:
             vocab_size (int): Size of the vocabulary.
-            embed_dim (int): Dimension of the embedding vectors.
+            max_words (int): Maximum number of words in a sequence.
             num_classes (int): Number of output classes (positive/negative sentiment).
             buffer_size (int): Maximum size of the replay buffer.
             batch_size (int): Size of each training batch.
-            gamma (float): Discount factor for future rewards.
             lr (float): Learning rate for the optimizer.
             update_every (int): Frequency of updating the network.
         """
         self.vocab_size = vocab_size
-        self.embed_dim = embed_dim
+        self.max_words = max_words
         self.num_classes = num_classes
-        self.gamma = gamma
         self.batch_size = batch_size
         self.update_every = update_every
 
         # Initialize Q-Network
-        self.qnetwork = QNetwork(vocab_size, embed_dim, num_classes).to(device)
+        self.qnetwork = TextModel(vocab_size, max_words, num_classes).to(device)
         self.optimizer = optim.Adam(self.qnetwork.parameters(), lr=lr)
 
         # Initialize replay memory
@@ -85,14 +82,10 @@ class SingleDQNAgent:
         # Get the Q value from the Q-Network
         q_values = self.qnetwork(texts)
 
-        # Compute Q targets for current states
-        Q_targets = labels.float().view(-1, 1)
+        # Use cross-entropy loss
+        loss = F.cross_entropy(q_values, labels)
 
-        # Get expected Q values from Q-Network
-        Q_expected = q_values.gather(1, torch.argmax(q_values, dim=1, keepdim=True))
-
-        # Compute loss
-        loss = F.mse_loss(Q_expected, Q_targets)
+        loss = loss.mean()
 
         # Minimize the loss
         self.optimizer.zero_grad()

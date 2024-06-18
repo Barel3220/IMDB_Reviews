@@ -18,6 +18,7 @@ class IMDBDataset(Dataset):
             max_tokens (int): Maximum number of tokens in the vocabulary.
             max_len (int): Maximum length of tokenized sequences.
         """
+        self.reverse_vocab = None
         self.dataframe = dataframe
         self.reviews = dataframe['review'].tolist()
         self.sentiments = dataframe['sentiment'].tolist()
@@ -46,6 +47,8 @@ class IMDBDataset(Dataset):
         vocab = {word: idx for idx, (word, _) in enumerate(counter.most_common(max_tokens), start=2)}
         vocab['<unk>'] = 0
         vocab['<pad>'] = 1
+        # Create reverse mapping for index-to-string
+        self.reverse_vocab = {idx: word for word, idx in vocab.items()}
         return vocab
 
     def process_data(self, text):

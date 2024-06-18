@@ -7,22 +7,25 @@ from sklearn.metrics import f1_score, confusion_matrix
 
 # Set device for computations
 device = torch.device(
-    "cuda:0" if torch.cuda.is_available() else "mps:0" if torch.backends.mps.is_available() else "cpu")
+    "cuda:0" if torch.cuda.is_available() else "mps:0" if torch.backends.mps.is_available() else "cpu"
+)
 
 
-def g_mean(y_true, y_pred):
+def g_mean(all_labels, all_preds):
     """
     Calculate the G-mean metric.
 
     Args:
-        y_true (list or np.ndarray): True labels.
-        y_pred (list or np.ndarray): Predicted labels.
+        all_labels (list or np.ndarray): True labels.
+        all_preds (list or np.ndarray): Predicted labels.
 
     Returns:
         float: G-mean score.
     """
-    cm = confusion_matrix(y_true, y_pred)
-    return np.sqrt((cm[0, 0] / (cm[0, 0] + cm[0, 1])) * (cm[1, 1] / (cm[1, 1] + cm[1, 0])))
+    tn, fp, fn, tp = confusion_matrix(all_labels, all_preds).ravel()
+    sensitivity = tp / (tp + fn)
+    specificity = tn / (tn + fp)
+    return np.sqrt(sensitivity * specificity)
 
 
 def evaluate(single_dqn_agent_, test_loader_):
