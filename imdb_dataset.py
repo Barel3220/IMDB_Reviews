@@ -45,7 +45,7 @@ class IMDBDataset(Dataset):
         for text in self.reviews:
             counter.update(self.tokenizer(text))
         vocab = {word: idx for idx, (word, _) in enumerate(counter.most_common(max_tokens), start=2)}
-        vocab['<unk>'] = 0
+        vocab['<unk>'] = 0  # 'unk' for unknown tokens
         vocab['<pad>'] = 1
         # Create reverse mapping for index-to-string
         self.reverse_vocab = {idx: word for word, idx in vocab.items()}

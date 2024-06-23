@@ -54,6 +54,4 @@ def evaluate(agent_, test_loader_):
     f_score = f1_score(all_labels, all_preds)
     g_mean_score = g_mean(all_labels, all_preds)
 
-    print(f'Accuracy: {accuracy:.2f}%')
-    print(f'F-score: {f_score:.2f}')
-    print(f'G-mean: {g_mean_score:.2f}')
+    return accuracy, f_score, g_mean_score

@@ -6,7 +6,8 @@ from single_dqn_replay_buffer import ReplayBuffer, device
 
 
 class SingleDQNAgent:
-    def __init__(self, vocab_size, max_words, num_classes, buffer_size=int(1e4), batch_size=64, lr=1e-4, update_every=4):
+    def __init__(self, vocab_size, max_words, num_classes, buffer_size=int(1e4), batch_size=64,
+                 lr=5e-4, update_every=4):
         """
         Initialize the SingleDQNAgent.
 

@@ -22,7 +22,7 @@ def predict_sentiment(review, single_dqn_agent, vocab, max_len=500):
     """
     single_dqn_agent.qnetwork.eval()
     tokens = tokenizer(review)
-    token_ids = [vocab.get(token, vocab['<pad>']) for token in tokens]
+    token_ids = [vocab.get(token, vocab['<unk>']) for token in tokens]
     token_ids = torch.tensor(token_ids, dtype=torch.long).to(device)
 
     if len(token_ids) > max_len:

@@ -12,8 +12,8 @@ from single_dqn_train import train
 from single_dqn_evaluate import evaluate
 
 # Load the IMDb dataset
-# file_path = '../imbalanced_datasets/IMDB_Dataset_Imbalance_0.01.csv'
-file_path = '../IMDB-Dataset-Edited.csv'
+file_path = '../imbalanced_datasets/IMDB_Dataset_Imbalance_0.04.csv'
+# file_path = '../IMDB-Dataset-Edited.csv'
 small_path = '../last_10_reviews.csv'
 
 # Load the datasets
@@ -72,17 +72,23 @@ if __name__ == "__main__":
     num_classes = 2  # Number of output classes
     agent = SingleDQNAgent(vocab_size, max_words=500, num_classes=num_classes)
 
-    agent = train(agent, train_loader)  # Train agent
+    train(agent, train_loader, test_loader)  # Train agent
 
-    evaluate(agent, test_loader)  # Evaluate the agent
+    # evaluate(agent, test_loader)  # Evaluate the agent
 
     # Predict sentiment of the last 10 reviews
     print(f"{'Review':<80} {'True':<10} {'Predicted':<10}")
     print("=" * 100)
 
+    correct = 0
+
     for text, label in small_loader:
         review = " ".join([train_dataset.reverse_vocab[token.item()] for token in text[0]
                            if token.item() != train_dataset.vocab['<pad>']])
         true_sentiment = label.item()
+        true_sentiment_label = 'positive' if true_sentiment == 1 else 'negative'
         predicted_sentiment = predict_sentiment(review, agent, train_dataset.vocab, max_len=500)
+        correct += 1 if predicted_sentiment == true_sentiment_label else 0
         print(f"{review[:77]:<80} {true_sentiment:<10} {predicted_sentiment:<10}")
+
+    print("The Results of Sentiment Predictions are: " + str(correct) + " / 10")
