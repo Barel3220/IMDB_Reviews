@@ -53,7 +53,7 @@ def collate_fn(batch, vocab, max_len=500):
     """
     texts, labels = zip(*batch)
     texts_padded = pad_sequence(
-        [torch.cat([text, torch.tensor([vocab['<pad>']] * (max_len - len(text)))]) for text in texts],
+        [torch.cat([text_, torch.tensor([vocab['<pad>']] * (max_len - len(text_)))]) for text_ in texts],
         batch_first=True, padding_value=vocab['<pad>']
     ).long()
     labels = torch.tensor(labels, dtype=torch.long)

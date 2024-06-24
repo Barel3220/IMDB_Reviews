@@ -11,8 +11,8 @@ from predict import predict_sentiment
 from train import train
 
 # Set file paths
-# file_path = '../imbalanced_datasets/IMDB_Dataset_Imbalance_0.10.csv'
-file_path = '../IMDB-Dataset-Edited.csv'
+file_path = '../imbalanced_datasets/IMDB_Dataset_Imbalance_0.04.csv'
+# file_path = '../IMDB-Dataset-Edited.csv'
 small_path = '../last_10_reviews.csv'
 
 # Load the datasets

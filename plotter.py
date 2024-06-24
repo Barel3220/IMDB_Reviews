@@ -1,10 +1,6 @@
 import matplotlib.pyplot as plt
 
 
-def save_plot(filename):
-    plt.savefig(filename)
-
-
 class Plotter:
     def __init__(self):
         self.epochs = []
@@ -20,7 +16,7 @@ class Plotter:
         self.f_scores.append(f_score)
         self.g_means.append(g_mean)
 
-    def plot_metrics(self):
+    def plot_metrics(self, filename):
         fig, axs = plt.subplots(2, 2, figsize=(12, 10))
 
         # Plot Loss
@@ -56,4 +52,5 @@ class Plotter:
         axs[1, 1].grid(True)
 
         plt.tight_layout()
+        plt.savefig(filename)
         plt.show()

@@ -2,7 +2,7 @@ import torch
 from tqdm import tqdm
 from agent import DoubleDQNAgent
 from torch.utils.data import DataLoader
-from plotter import Plotter, save_plot
+from plotter import Plotter
 from evaluate import evaluate
 
 # Set device for computations
@@ -48,5 +48,4 @@ def train(agent_, train_loader_, test_loader_, num_epochs=15):
         print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {avg_epoch_loss:.4f}, Accuracy: {accuracy:.2f}, \
         F-score: {f_score:.2f}, G-mean: {g_mean_score:.2f}')
 
-    plotter.plot_metrics()
-    save_plot('double_dqn_training_metrics.png')
+    plotter.plot_metrics('double_dqn_training_metrics.png')

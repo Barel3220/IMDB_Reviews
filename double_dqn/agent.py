@@ -22,7 +22,7 @@ def soft_update(local_model, target_model, tau):
 
 class DoubleDQNAgent:
     def __init__(self, vocab_size, max_words, num_classes, buffer_size=int(1e5), batch_size=32, lr=5e-4,
-                 update_every=2, gamma=0.95, tau=1e-2):
+                 update_every=1, gamma=0.8, tau=1e-2):
         """
         Initialize the DoubleDQNAgent.
 

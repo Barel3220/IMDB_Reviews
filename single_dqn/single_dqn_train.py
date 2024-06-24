@@ -2,7 +2,7 @@ import torch
 from tqdm import tqdm
 from single_dqn_agent import SingleDQNAgent
 from torch.utils.data import DataLoader
-from plotter import Plotter, save_plot
+from plotter import Plotter
 from single_dqn_evaluate import evaluate
 
 # Set device for computations
@@ -11,7 +11,7 @@ device = torch.device(
 )
 
 
-def train(single_dqn_agent_, train_loader_, test_loader_, num_epochs=15):
+def train(single_dqn_agent_, train_loader_, test_loader_, num_epochs=30):
     """
     Train the agent using the training data.
 
@@ -49,5 +49,4 @@ def train(single_dqn_agent_, train_loader_, test_loader_, num_epochs=15):
         print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {avg_epoch_loss:.4f}, Accuracy: {accuracy:.2f}, \
         F-score: {f_score:.2f}, G-mean: {g_mean_score:.2f}')
 
-    plotter.plot_metrics()
-    save_plot('single_dqn_training_metrics.png')
+    plotter.plot_metrics('single_dqn_training_metrics.png')
