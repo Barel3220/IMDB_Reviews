@@ -1,4 +1,14 @@
 import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+
+
+def plot_confusion_matrix(all_labels, all_preds, classes, filename):
+    cm = confusion_matrix(all_labels, all_preds, labels=classes)
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=classes)
+    fig, ax = plt.subplots(figsize=(12, 12))
+    disp.plot(ax=ax)
+    plt.title('Confusion Matrix')
+    plt.savefig(filename)
 
 
 class Plotter:
@@ -16,7 +26,7 @@ class Plotter:
         self.f_scores.append(f_score)
         self.g_means.append(g_mean)
 
-    def plot_metrics(self, filename):
+    def plot_metrics(self, filename, y_true=None, y_pred=None, classes=None):
         fig, axs = plt.subplots(2, 2, figsize=(12, 10))
 
         # Plot Loss

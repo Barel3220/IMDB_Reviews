@@ -1,71 +1,90 @@
 import pandas as pd
-from sklearn.preprocessing import LabelEncoder
 import os
 
 # Load the IMDb dataset
 file_path = 'IMDB-Dataset-Edited.csv'
 df = pd.read_csv(file_path)
 
-# Encode the sentiments (positive/negative) as integers
-le = LabelEncoder()
-df['sentiment'] = le.fit_transform(df['sentiment'])
-
 
 # Function to create an imbalanced dataset
-def create_imbalanced_dataset(df_, imbalance_ratio_):
-    class_counts_ = df_['sentiment'].value_counts()
-    majority_class = class_counts_.idxmax()
-    minority_class = class_counts_.idxmin()
+def create_imbalanced_dataset(df_, num_pos_train, num_neg_train, num_pos_test, num_neg_test):
+    """
+    Create an imbalanced dataset by undersampling the majority class and oversampling the minority class.
 
-    print(f"Original class counts: {class_counts_}")
-    print(f"Majority class: {majority_class}, Minority class: {minority_class}")
+    Args:
+        df_ (pd.DataFrame): Original DataFrame.
+        num_pos_train (int): Number of positive samples for training.
+        num_neg_train (int): Number of negative samples for training.
+        num_pos_test (int): Number of positive samples for testing.
+        num_neg_test (int): Number of negative samples for testing.
+
+    Returns:
+        pd.DataFrame: Training and testing DataFrames.
+    """
+    majority_class = 'negative'
+    minority_class = 'positive'
 
     majority_df = df_[df_['sentiment'] == majority_class]
     minority_df = df_[df_['sentiment'] == minority_class]
 
-    majority_size = len(majority_df)
-    # Calculate the new majority size by adding the given percentage of the minority class size
-    new_majority_size = int(majority_size * (1 + imbalance_ratio_))
+    # Sample training data
+    train_majority_df = majority_df.sample(n=num_neg_train, random_state=42)
+    train_minority_df = minority_df.sample(n=num_pos_train, random_state=42)
+    train_df_ = pd.concat([train_majority_df, train_minority_df]).sample(frac=1, random_state=42).reset_index(drop=True)
 
-    # Ensure we don't exceed the available number of minority class samples
-    if new_majority_size > len(minority_df) + majority_size:
-        new_majority_size = len(minority_df) + majority_size
+    # Sample test data
+    test_majority_df = majority_df.sample(n=num_neg_test, random_state=42)
+    test_minority_df = minority_df.sample(n=num_pos_test, random_state=42)
+    test_df_ = pd.concat([test_majority_df, test_minority_df]).sample(frac=1, random_state=42).reset_index(drop=True)
 
-    print(f"New majority size: {new_majority_size}, Minority size: {majority_size}")
-
-    majority_df = majority_df.sample(n=majority_size, random_state=42)
-    additional_majority_samples = majority_df.sample(n=new_majority_size - majority_size, replace=True, random_state=42)
-
-    imbalanced_df_ = pd.concat([majority_df, additional_majority_samples, minority_df]).sample(frac=1,
-                                                                                               random_state=42).reset_index(
-        drop=True)
-
-    # Print the class counts of the created imbalanced dataset
-    imbalanced_class_counts = imbalanced_df_['sentiment'].value_counts()
-    print(f"Imbalanced class counts: {imbalanced_class_counts}")
-
-    return imbalanced_df_
+    return train_df_, test_df_
 
 
 # Create directory for saving imbalanced datasets
 output_dir = 'imbalanced_datasets'
 os.makedirs(output_dir, exist_ok=True)
 
-# Set imbalance ratios and save datasets
-imbalance_ratios = [0.1, 0.05, 0.04, 0.02, 0.01]  # These represent the desired imbalance ratios
-for imbalance_ratio in imbalance_ratios:
-    print(f"Creating dataset with Imbalance Ratio: {imbalance_ratio}")
+# Set the number of samples for each imbalance ratio and save datasets
+settings = [
+    {"imbalance_ratio": "10%", "num_pos_train": 1250, "num_neg_train": 12000, "num_pos_test": 12500,
+     "num_neg_test": 12500},
+    {"imbalance_ratio": "5%", "num_pos_train": 625, "num_neg_train": 12000, "num_pos_test": 12500,
+     "num_neg_test": 12500},
+    {"imbalance_ratio": "4%", "num_pos_train": 500, "num_neg_train": 12000, "num_pos_test": 12500,
+     "num_neg_test": 12500},
+    {"imbalance_ratio": "2%", "num_pos_train": 250, "num_neg_train": 12000, "num_pos_test": 12500,
+     "num_neg_test": 12500},
+    {"imbalance_ratio": "1%", "num_pos_train": 125, "num_neg_train": 12000, "num_pos_test": 12500,
+     "num_neg_test": 12500}
+]
 
-    imbalanced_df = create_imbalanced_dataset(df, imbalance_ratio)
+for setting in settings:
+    print(f"Creating dataset with Imbalance Ratio: {setting['imbalance_ratio']}")
+
+    train_df, test_df = create_imbalanced_dataset(df,
+                                                  setting['num_pos_train'],
+                                                  setting['num_neg_train'],
+                                                  setting['num_pos_test'],
+                                                  setting['num_neg_test'])
 
     # Print the actual imbalance ratio in the created dataset
-    class_counts = imbalanced_df['sentiment'].value_counts()
-    actual_imbalance_ratio = class_counts.max() / class_counts.min()
-    print(f"Actual Imbalance Ratio: {actual_imbalance_ratio:.2f}")
+    train_class_counts = train_df['sentiment'].value_counts()
+    test_class_counts = test_df['sentiment'].value_counts()
+    actual_train_imbalance_ratio = train_class_counts.max() / train_class_counts.min()
+    print(
+        f"Training set - positive reviews: {train_class_counts['positive']} negative reviews: {train_class_counts['negative']}")
+    print(
+        f"Test set - positive reviews: {test_class_counts['positive']} negative reviews: {test_class_counts['negative']}")
+    print(f"Actual Training Imbalance Ratio: {actual_train_imbalance_ratio}")
 
-    # Save the imbalanced dataset to a CSV file
-    output_file = os.path.join(output_dir, f'IMDB_Dataset_Imbalance_{imbalance_ratio:.2f}.csv')
-    imbalanced_df.to_csv(output_file, index=False)
-    print(f"Saved imbalanced dataset to {output_file}")
+    # Save the imbalanced dataset to CSV files
+    imbalanced_train_file = os.path.join(output_dir, f'IMDB_Train_Dataset_Imbalance_{setting["imbalance_ratio"]}.csv')
+    imbalanced_test_file = os.path.join(output_dir, f'IMDB_Test_Dataset_Balanced.csv')
+
+    train_df.to_csv(imbalanced_train_file, index=False)
+    test_df.to_csv(imbalanced_test_file, index=False)
+
+    print(f"Saved imbalanced training dataset to {imbalanced_train_file}")
+    print(f"Saved balanced test dataset to {imbalanced_test_file}")
 
 print("All imbalanced datasets created and saved successfully.")

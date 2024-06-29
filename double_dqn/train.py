@@ -10,7 +10,7 @@ device = torch.device(
     "cuda:0" if torch.cuda.is_available() else "mps:0" if torch.backends.mps.is_available() else "cpu")
 
 
-def train(agent_, train_loader_, test_loader_, num_epochs=15):
+def train(agent_, train_loader_, test_loader_, num_epochs=10):
     """
     Train the agent using the training data.
 
@@ -28,7 +28,17 @@ def train(agent_, train_loader_, test_loader_, num_epochs=15):
         train_loader_tqdm = tqdm(train_loader_, desc=f"Epoch {epoch + 1}/{num_epochs}", unit="batch")
         for texts, labels in train_loader_tqdm:
             texts, labels = texts.to(device).long(), labels.to(device)
-            loss = agent_.step(texts, labels)
+
+            # Generate actions
+            actions = agent_.act(texts)
+            rewards = (labels == actions).float()  # Rewards: 1 for correct, 0 for incorrect
+            minority_class_label = 1  # Assuming 1 is the minority class label
+            rewards[labels == minority_class_label] *= 10  # Adjust reward for minority class
+
+            next_texts = texts  # Next state is same as current state in this context
+            dones = torch.ones_like(labels, dtype=torch.float)  # Every step is terminal in this context
+
+            loss = agent_.step(texts, actions, rewards, next_texts, dones)
 
             if loss is not None:
                 epoch_loss += loss.item()

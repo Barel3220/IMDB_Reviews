@@ -6,8 +6,8 @@ from single_dqn_replay_buffer import ReplayBuffer, device
 
 
 class SingleDQNAgent:
-    def __init__(self, vocab_size, max_words, num_classes, buffer_size=int(1e6), batch_size=32,
-                 lr=5e-4, update_every=1):
+    def __init__(self, vocab_size, max_words, num_classes, buffer_size=int(1e5), batch_size=128,
+                 lr=5e-4, update_every=1, gamma=0.5):
         """
         Initialize the SingleDQNAgent.
 
@@ -19,12 +19,14 @@ class SingleDQNAgent:
             batch_size (int): Size of each training batch.
             lr (float): Learning rate for the optimizer.
             update_every (int): Frequency of updating the network.
+            gamma (float): Discount factor for future rewards.
         """
         self.vocab_size = vocab_size
         self.max_words = max_words
         self.num_classes = num_classes
         self.batch_size = batch_size
         self.update_every = update_every
+        self.gamma = gamma
 
         # Initialize Q-Network
         self.qnetwork = TextModel(vocab_size, max_words, num_classes).to(device)
@@ -34,17 +36,21 @@ class SingleDQNAgent:
         self.memory = ReplayBuffer(buffer_size, batch_size, seed=0)
         self.t_step = 0  # Initialize time step for updating network
 
-    def step(self, texts, labels):
+    def step(self, texts, actions, rewards, next_texts, dones):
         """
         Add experience to memory and possibly learn from it.
 
         Args:
             texts (torch.Tensor): Batch of token ids.
-            labels (torch.Tensor): Batch of sentiment labels.
+            actions (torch.Tensor): Batch of actions taken.
+            rewards (torch.Tensor): Batch of rewards received.
+            next_texts (torch.Tensor): Batch of next states.
+            dones (torch.Tensor): Batch of done signals.
         """
-        texts, labels = texts.to(device), labels.to(device)
-        for text, label in zip(texts, labels):
-            self.memory.add(text, label.item())
+        texts, actions, rewards, next_texts, dones = texts.to(device), actions.to(device), rewards.to(
+            device), next_texts.to(device), dones.to(device)
+        for i in range(len(texts)):
+            self.memory.add(texts[i], actions[i].item(), rewards[i].item(), next_texts[i], dones[i].item())
 
         loss = None
         self.t_step = (self.t_step + 1) % self.update_every
@@ -78,17 +84,17 @@ class SingleDQNAgent:
         Args:
             experiences (tuple): Batch of experiences.
         """
-        texts, labels = experiences
+        texts, actions, rewards, next_texts, dones = experiences
 
         # Get the Q value from the Q-Network
-        q_values = self.qnetwork(texts)
+        q_values = self.qnetwork(texts).gather(1, actions.unsqueeze(1)).squeeze(1)
 
-        # Use cross-entropy loss
-        loss = F.cross_entropy(q_values, labels)
+        with torch.no_grad():
+            q_values_next = self.qnetwork(next_texts).max(1)[0]
+            q_targets = rewards + (self.gamma * q_values_next * (1 - dones.float()))
 
-        loss = loss.mean()
+        loss = F.mse_loss(q_values, q_targets)
 
-        # Minimize the loss
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()

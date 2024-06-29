@@ -3,7 +3,8 @@ import numpy as np
 from tqdm import tqdm
 from single_dqn_agent import SingleDQNAgent
 from torch.utils.data import DataLoader
-from sklearn.metrics import f1_score, confusion_matrix
+from plotter import plot_confusion_matrix
+from sklearn.metrics import f1_score, confusion_matrix, classification_report
 
 # Set device for computations
 device = torch.device(
@@ -54,5 +55,8 @@ def evaluate(single_dqn_agent_, test_loader_):
     accuracy = 100 * correct / total
     f_score = f1_score(all_labels, all_preds)
     g_mean_score = g_mean(all_labels, all_preds)
+    plot_confusion_matrix(all_labels, all_preds, [0, 1], 'single_dqn_confusion_matrix.png')
+
+    print(classification_report(all_labels, all_preds, target_names=['negative', 'positive']))
 
     return accuracy, f_score, g_mean_score

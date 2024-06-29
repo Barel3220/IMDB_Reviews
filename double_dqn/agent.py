@@ -21,8 +21,8 @@ def soft_update(local_model, target_model, tau):
 
 
 class DoubleDQNAgent:
-    def __init__(self, vocab_size, max_words, num_classes, buffer_size=int(1e5), batch_size=32, lr=5e-4,
-                 update_every=1, gamma=0.8, tau=1e-2):
+    def __init__(self, vocab_size, max_words, num_classes, buffer_size=int(1e5), batch_size=128, lr=5e-4,
+                 update_every=1, gamma=0.5, tau=1e-2):
         """
         Initialize the DoubleDQNAgent.
 
@@ -54,17 +54,21 @@ class DoubleDQNAgent:
         self.memory = ReplayBuffer(buffer_size, batch_size, seed=0)
         self.t_step = 0  # Initialize time step for updating network
 
-    def step(self, texts, labels):
+    def step(self, texts, actions, rewards, next_texts, dones):
         """
         Add experience to memory and possibly learn from it.
 
         Args:
             texts (torch.Tensor): Batch of token ids.
-            labels (torch.Tensor): Batch of sentiment labels.
+            actions (torch.Tensor): Batch of actions taken.
+            rewards (torch.Tensor): Batch of rewards received.
+            next_texts (torch.Tensor): Batch of next states.
+            dones (torch.Tensor): Batch of done signals.
         """
-        texts, labels = texts.to(device), labels.to(device)
-        for text, label in zip(texts, labels):
-            self.memory.add(text, label.item())
+        texts, actions, rewards, next_texts, dones = texts.to(device), actions.to(device), rewards.to(
+            device), next_texts.to(device), dones.to(device)
+        for i in range(len(texts)):
+            self.memory.add(texts[i], actions[i].item(), rewards[i].item(), next_texts[i], dones[i].item())
 
         loss = None
         self.t_step = (self.t_step + 1) % self.update_every
@@ -84,12 +88,12 @@ class DoubleDQNAgent:
         Returns:
             torch.Tensor: Tensor containing action values.
         """
-        text = text.to(device)  # Ensure text is on the correct device
-        self.qnetwork_local.eval()  # Set network to evaluation mode
+        text = text.to(device)
+        self.qnetwork_local.eval()
         with torch.no_grad():
-            action_values = self.qnetwork_local(text)  # Get action values
-        self.qnetwork_local.train()  # Set network back to training mode
-        return torch.argmax(action_values, dim=1)  # Return the action with the highest value
+            action_values = self.qnetwork_local(text)
+        self.qnetwork_local.train()
+        return torch.argmax(action_values, dim=1)
 
     def learn(self, experiences):
         """
@@ -98,58 +102,24 @@ class DoubleDQNAgent:
         Args:
             experiences (tuple): Batch of experiences.
         """
-        texts, labels = experiences
+        texts, actions, rewards, next_texts, dones = experiences
 
-        # Get the Q values from the local Q-Network
-        q_values_local = self.qnetwork_local(texts)
+        q_values_local = self.qnetwork_local(texts).gather(1, actions.unsqueeze(1)).squeeze(1)
 
-        # Get the Q values from the target Q-Network for the next states
         with torch.no_grad():
-            q_values_next_local = self.qnetwork_local(texts).detach()
-            q_values_next_target = self.qnetwork_target(texts).detach()
-
-            # Double DQN: use the local network to select actions and the target network to evaluate
+            q_values_next_local = self.qnetwork_local(next_texts)
+            q_values_next_target = self.qnetwork_target(next_texts)
             max_actions = q_values_next_local.argmax(dim=1)
-            q_values_next = q_values_next_target.gather(1, max_actions.unsqueeze(1)).squeeze()
+            q_values_next = q_values_next_target.gather(1, max_actions.unsqueeze(1)).squeeze(1)
 
-        # Compute Q targets for current states
-        q_targets = labels.float() + (self.gamma * q_values_next)
+        q_targets = rewards + (self.gamma * q_values_next * (1 - dones.float()))
 
-        # Compute loss using cross-entropy
-        loss = F.cross_entropy(q_values_local, labels.long())
+        loss = F.mse_loss(q_values_local, q_targets)
 
-        # Minimize the loss
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
 
-        # Update the target network
         soft_update(self.qnetwork_local, self.qnetwork_target, self.tau)
-
-        # # Get the Q value from the local Q-Network
-        # q_values_local = self.qnetwork_local(texts)
-        #
-        # # # Double DQN update
-        # # with torch.no_grad():
-        # #     q_targets_next = self.qnetwork_target(texts).detach().max(1)[0].unsqueeze(1)
-        # #     q_targets = labels.float().view(-1, 1) + self.tau * q_targets_next
-        # #
-        # # # Compute loss using Huber loss
-        # # q_expected = q_values_local.gather(1, torch.argmax(q_values_local, dim=1, keepdim=True))
-        # # loss = F.smooth_l1_loss(q_expected, q_targets)
-        #
-        # # Double DQN architecture but using cross-entropy directly with labels
-        # q_targets = labels.long().view(-1)  # Use labels as targets for classification
-        #
-        # # Compute loss using cross-entropy
-        # loss = F.cross_entropy(q_values_local, q_targets)
-        #
-        # # Minimize the loss
-        # self.optimizer.zero_grad()
-        # loss.backward()
-        # self.optimizer.step()
-        #
-        # # Update the target network
-        # soft_update(self.qnetwork_local, self.qnetwork_target, self.tau)
 
         return loss

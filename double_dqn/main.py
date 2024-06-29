@@ -11,26 +11,26 @@ from predict import predict_sentiment
 from train import train
 
 # Set file paths
-file_path = '../imbalanced_datasets/IMDB_Dataset_Imbalance_0.04.csv'
+train_file_path = '../imbalanced_datasets/IMDB_Train_Dataset_Imbalance_10%.csv'
+test_file_path = '../imbalanced_datasets/IMDB_Test_Dataset_Balanced.csv'
 # file_path = '../IMDB-Dataset-Edited.csv'
 small_path = '../last_10_reviews.csv'
 
 # Load the datasets
-df = pd.read_csv(file_path)
+train_df = pd.read_csv(train_file_path)
+test_df = pd.read_csv(test_file_path)
 small_df = pd.read_csv(small_path)
 
-# Encode sentiments as integers
+# Encode the sentiments (positive/negative) as integers
 le = LabelEncoder()
-df['sentiment'] = le.fit_transform(df['sentiment'])
+train_df['sentiment'] = le.fit_transform(train_df['sentiment'])
+test_df['sentiment'] = le.fit_transform(test_df['sentiment'])
 small_df['sentiment'] = le.fit_transform(small_df['sentiment'])
 
 # Calculate the imbalance ratio
-counts = df['sentiment'].value_counts()
+counts = train_df['sentiment'].value_counts()
 imbalance_ratio = counts.max() / counts.min()
 print(f"Imbalance Ratio: {imbalance_ratio:.2f}")
-
-# Split the data into training and testing sets
-train_df, test_df = train_test_split(df, test_size=0.2, random_state=42)
 
 # Create datasets
 train_dataset = IMDBDataset(train_df, max_tokens=5000, max_len=500)
