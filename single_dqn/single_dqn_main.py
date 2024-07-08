@@ -10,8 +10,10 @@ from single_dqn_agent import SingleDQNAgent
 from single_dqn_predict import predict_sentiment
 from single_dqn_train import train
 
+percent_string = "10%"
+
 # Set file paths
-train_file_path = '../imbalanced_datasets/IMDB_Train_Dataset_Imbalance_10%.csv'
+train_file_path = '../imbalanced_datasets/IMDB_Train_Dataset_Imbalance_' + percent_string + '.csv'
 test_file_path = '../imbalanced_datasets/IMDB_Test_Dataset_Balanced.csv'
 # file_path = '../IMDB-Dataset-Edited.csv'
 small_path = '../last_10_reviews.csv'
@@ -72,7 +74,7 @@ if __name__ == "__main__":
     num_classes = 2  # Number of output classes
     agent = SingleDQNAgent(vocab_size, max_words=500, num_classes=num_classes)
 
-    train(agent, train_loader, test_loader)  # Train agent
+    train(agent, train_loader, test_loader, num_epochs=40, percent_string=percent_string)  # Train agent
 
     # evaluate(agent, test_loader)  # Evaluate the agent
 

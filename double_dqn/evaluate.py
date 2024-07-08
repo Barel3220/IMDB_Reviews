@@ -28,13 +28,15 @@ def g_mean(all_labels, all_preds):
     return np.sqrt(sensitivity * specificity)
 
 
-def evaluate(agent_, test_loader_):
+def evaluate(agent_, test_loader_, is_last_epoch=False, percent_string=''):
     """
     Evaluate the agent using the test data.
 
     Args:
         agent_ (DoubleDQNAgent): The agent to be evaluated.
         test_loader_ (DataLoader): DataLoader for the test data.
+        is_last_epoch (Boolean): flag to plot confusion matrix
+        percent_string (str): Which Dataset is running and which to save.
     """
     agent_.qnetwork_local.eval()  # Set network to evaluation mode
     correct = 0  # Initialize correct predictions count
@@ -54,7 +56,9 @@ def evaluate(agent_, test_loader_):
     accuracy = 100 * correct / total
     f_score = f1_score(all_labels, all_preds)
     g_mean_score = g_mean(all_labels, all_preds)
-    plot_confusion_matrix(all_labels, all_preds, [0, 1], 'double_dqn_confusion_matrix.png')
+
+    if is_last_epoch:
+        plot_confusion_matrix(all_labels, all_preds, [0, 1], 'double_dqn_confusion_matrix_' + percent_string + '.png')
 
     print(classification_report(all_labels, all_preds, target_names=['negative', 'positive']))
 

@@ -46,15 +46,13 @@ os.makedirs(output_dir, exist_ok=True)
 
 # Set the number of samples for each imbalance ratio and save datasets
 settings = [
+    {"imbalance_ratio": "0%", "num_pos_train": 12000, "num_neg_train": 12000, "num_pos_test": 12500,
+     "num_neg_test": 12500},
     {"imbalance_ratio": "10%", "num_pos_train": 1250, "num_neg_train": 12000, "num_pos_test": 12500,
      "num_neg_test": 12500},
     {"imbalance_ratio": "5%", "num_pos_train": 625, "num_neg_train": 12000, "num_pos_test": 12500,
      "num_neg_test": 12500},
-    {"imbalance_ratio": "4%", "num_pos_train": 500, "num_neg_train": 12000, "num_pos_test": 12500,
-     "num_neg_test": 12500},
     {"imbalance_ratio": "2%", "num_pos_train": 250, "num_neg_train": 12000, "num_pos_test": 12500,
-     "num_neg_test": 12500},
-    {"imbalance_ratio": "1%", "num_pos_train": 125, "num_neg_train": 12000, "num_pos_test": 12500,
      "num_neg_test": 12500}
 ]
 

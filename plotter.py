@@ -9,6 +9,7 @@ def plot_confusion_matrix(all_labels, all_preds, classes, filename):
     disp.plot(ax=ax)
     plt.title('Confusion Matrix')
     plt.savefig(filename)
+    plt.show()
 
 
 class Plotter:

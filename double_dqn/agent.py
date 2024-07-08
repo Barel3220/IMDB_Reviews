@@ -21,8 +21,8 @@ def soft_update(local_model, target_model, tau):
 
 
 class DoubleDQNAgent:
-    def __init__(self, vocab_size, max_words, num_classes, buffer_size=int(1e5), batch_size=128, lr=5e-4,
-                 update_every=1, gamma=0.5, tau=1e-2):
+    def __init__(self, vocab_size, max_words, num_classes, buffer_size=int(1e5), batch_size=64, lr=5e-4,
+                 update_every=1, gamma=0.4, tau=1e-2):
         """
         Initialize the DoubleDQNAgent.
 
@@ -54,21 +54,23 @@ class DoubleDQNAgent:
         self.memory = ReplayBuffer(buffer_size, batch_size, seed=0)
         self.t_step = 0  # Initialize time step for updating network
 
-    def step(self, texts, actions, rewards, next_texts, dones):
+    def step(self, texts, labels):
         """
         Add experience to memory and possibly learn from it.
 
         Args:
             texts (torch.Tensor): Batch of token ids.
-            actions (torch.Tensor): Batch of actions taken.
-            rewards (torch.Tensor): Batch of rewards received.
-            next_texts (torch.Tensor): Batch of next states.
-            dones (torch.Tensor): Batch of done signals.
+            labels (torch.Tensor): Batch of sentiment labels.
         """
-        texts, actions, rewards, next_texts, dones = texts.to(device), actions.to(device), rewards.to(
-            device), next_texts.to(device), dones.to(device)
-        for i in range(len(texts)):
-            self.memory.add(texts[i], actions[i].item(), rewards[i].item(), next_texts[i], dones[i].item())
+        texts, labels = texts.to(device), labels.to(device)
+        rewards = []
+
+        for text, label in zip(texts, labels):
+            action = self.act(text.unsqueeze(0)).item()
+            reward = self.calculate_reward(action, label)
+            done = True  # Each step is a terminal step in this setup
+            self.memory.add(text, action, reward, text, done)
+            rewards.append(reward)  # Collect rewards for logging or debugging if needed
 
         loss = None
         self.t_step = (self.t_step + 1) % self.update_every
@@ -77,6 +79,14 @@ class DoubleDQNAgent:
                 experiences = self.memory.sample()
                 loss = self.learn(experiences)
         return loss
+
+    def calculate_reward(self, action, label):
+        minority_class = 1  # Assuming minority class is labeled as 1
+        majority_class = 0  # Assuming majority class is labeled as 0
+        if label == minority_class:
+            return 1 if action == label else -1
+        else:
+            return self.gamma if action == label else -self.gamma
 
     def act(self, text):
         """

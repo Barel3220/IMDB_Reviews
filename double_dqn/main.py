@@ -10,8 +10,10 @@ from agent import DoubleDQNAgent  # Updated import
 from predict import predict_sentiment
 from train import train
 
+percent_string = "10%"
+
 # Set file paths
-train_file_path = '../imbalanced_datasets/IMDB_Train_Dataset_Imbalance_10%.csv'
+train_file_path = '../imbalanced_datasets/IMDB_Train_Dataset_Imbalance_' + percent_string + '.csv'
 test_file_path = '../imbalanced_datasets/IMDB_Test_Dataset_Balanced.csv'
 # file_path = '../IMDB-Dataset-Edited.csv'
 small_path = '../last_10_reviews.csv'
@@ -52,7 +54,7 @@ def collate_fn(batch, vocab, max_len=500):
     """
     texts, labels = zip(*batch)
     texts_padded = pad_sequence(
-        [torch.cat([text, torch.tensor([vocab['<pad>']] * (max_len - len(text)))]) for text in texts],
+        [torch.cat([text_, torch.tensor([vocab['<pad>']] * (max_len - len(text_)))]) for text_ in texts],
         batch_first=True, padding_value=vocab['<pad>']
     ).long()
     labels = torch.tensor(labels, dtype=torch.long)
@@ -72,7 +74,7 @@ if __name__ == "__main__":
     num_classes = 2  # Number of output classes
     agent = DoubleDQNAgent(vocab_size, max_words=500, num_classes=num_classes)
 
-    train(agent, train_loader, test_loader)  # Train agent
+    train(agent, train_loader, test_loader, num_epochs=20, percent_string=percent_string)  # Train agent
 
     # Predict sentiment of the last 10 reviews
     print(f"{'Review':<80} {'True':<10} {'Predicted':<10}")

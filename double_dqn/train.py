@@ -10,7 +10,7 @@ device = torch.device(
     "cuda:0" if torch.cuda.is_available() else "mps:0" if torch.backends.mps.is_available() else "cpu")
 
 
-def train(agent_, train_loader_, test_loader_, num_epochs=10):
+def train(agent_, train_loader_, test_loader_, num_epochs=20, gamma=0.5, percent_string=''):
     """
     Train the agent using the training data.
 
@@ -19,6 +19,8 @@ def train(agent_, train_loader_, test_loader_, num_epochs=10):
         train_loader_ (DataLoader): DataLoader for the training data.
         test_loader_ (DataLoader): DataLoader for the test data.
         num_epochs (int): Number of epochs to train the agent.
+        gamma (float): Reward of the major class.
+        percent_string: Which Dataset is running and which to save.
     """
     plotter = Plotter()
 
@@ -29,16 +31,8 @@ def train(agent_, train_loader_, test_loader_, num_epochs=10):
         for texts, labels in train_loader_tqdm:
             texts, labels = texts.to(device).long(), labels.to(device)
 
-            # Generate actions
-            actions = agent_.act(texts)
-            rewards = (labels == actions).float()  # Rewards: 1 for correct, 0 for incorrect
-            minority_class_label = 1  # Assuming 1 is the minority class label
-            rewards[labels == minority_class_label] *= 10  # Adjust reward for minority class
-
-            next_texts = texts  # Next state is same as current state in this context
-            dones = torch.ones_like(labels, dtype=torch.float)  # Every step is terminal in this context
-
-            loss = agent_.step(texts, actions, rewards, next_texts, dones)
+            # Pass texts and labels to the agent's step function, which handles reward calculation and memory update
+            loss = agent_.step(texts, labels)
 
             if loss is not None:
                 epoch_loss += loss.item()
@@ -49,13 +43,18 @@ def train(agent_, train_loader_, test_loader_, num_epochs=10):
         else:
             avg_epoch_loss = 0
 
+        is_last_epoch = False
+
+        if epoch == num_epochs:
+            is_last_epoch = True
+
         # Evaluate the agent on the test set
-        accuracy, f_score, g_mean_score = evaluate(agent_, test_loader_)
+        accuracy, f_score, g_mean_score = evaluate(agent_, test_loader_, is_last_epoch, percent_string)
 
         # Log metrics
         plotter.log_epoch(epoch + 1, avg_epoch_loss, accuracy, f_score, g_mean_score)
 
-        print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {avg_epoch_loss:.4f}, Accuracy: {accuracy:.2f}, \
-        F-score: {f_score:.2f}, G-mean: {g_mean_score:.2f}')
+        print(f'Epoch [{epoch + 1}/{num_epochs}], Loss: {avg_epoch_loss:.4f}, Accuracy: {accuracy:.4f}, \
+        F-score: {f_score:.4f}, G-mean: {g_mean_score:.4f}')
 
-    plotter.plot_metrics('double_dqn_training_metrics.png')
+    plotter.plot_metrics('double_dqn_training_metrics_' + percent_string + '.png')
